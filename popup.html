@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中英混合阅读助手</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 360px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .content {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      color: #333;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #667eea;
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .control-label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-value {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    /* 开关按钮 */
+    .switch-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .switch-container:last-child {
+      margin-bottom: 0;
+    }
+
+    .switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 26px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    /* 滑块 */
+    .slider-container {
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #ddd;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* 单选按钮组 */
+    .radio-group {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    .radio-option {
+      flex: 1;
+    }
+
+    .radio-option input[type="radio"] {
+      display: none;
+    }
+
+    .radio-option label {
+      display: block;
+      padding: 8px;
+      text-align: center;
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .radio-option input[type="radio"]:checked + label {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: #667eea;
+    }
+
+    /* 按钮 */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* 信息提示 */
+    .info-box {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #1976d2;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      background: #d4edda;
+      color: #155724;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .speaker-icon {
+      margin-right: 8px;
+    }
+
+    .setting-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .setting-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .setting-input::placeholder {
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🌐 中英混合阅读助手</h1>
+    <div class="subtitle">沉浸式英语学习工具</div>
+  </div>
+
+  <div class="content">
+    <div class="section">
+      <div class="section-title">功能开关</div>
+      <div class="switch-container">
+        <span>启用插件</span>
+        <label class="switch">
+          <input type="checkbox" id="enableSwitch" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="switch-container">
+        <span><span class="speaker-icon">🔊</span>自动发音</span>
+        <label class="switch">
+          <input type="checkbox" id="autoSpeakSwitch" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">选词模式</div>
+      <div class="radio-group">
+        <div class="radio-option">
+          <input type="radio" id="modeDict" name="mode" value="dict" checked>
+          <label for="modeDict">词表模式</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" id="modeAI" name="mode" value="ai">
+          <label for="modeAI">AI智能</label>
+        </div>
+      </div>
+      <div class="info-box" style="margin-top: 12px; font-size: 11px;">
+        <strong>词表模式：</strong>使用内置词汇表（快速、免费）<br>
+        <strong>AI模式：</strong>智能分析文本选词（需配置API）
+      </div>
+    </div>
+
+    <div class="section" id="aiSettings" style="display: none;">
+      <div class="section-title">AI配置</div>
+      <div class="control-group">
+        <label class="control-label" style="display: block; margin-bottom: 4px;">
+          <span>AI服务</span>
+        </label>
+        <select class="setting-input" id="aiService" style="cursor: pointer;">
+          <option value="qwen">通义千问（推荐）</option>
+          <option value="openai">OpenAI</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="control-label" style="display: block; margin-bottom: 4px;">
+          <span>API密钥</span>
+        </label>
+        <input type="password" class="setting-input" id="aiApiKey" placeholder="sk-...">
+      </div>
+      <div class="control-group" id="customEndpoint" style="display: none;">
+        <label class="control-label" style="display: block; margin-bottom: 4px;">
+          <span>API地址</span>
+        </label>
+        <input type="text" class="setting-input" id="aiEndpoint" placeholder="https://...">
+      </div>
+      <div class="control-group" id="customModel" style="display: none; margin-bottom: 0;">
+        <label class="control-label" style="display: block; margin-bottom: 4px;">
+          <span>模型名称</span>
+        </label>
+        <input type="text" class="setting-input" id="aiModel" placeholder="gpt-3.5-turbo">
+      </div>
+      <div class="info-box" style="margin-top: 12px; font-size: 11px;">
+        <strong>通义千问：</strong>阿里云AI，中文友好<br>
+        <strong>OpenAI：</strong>GPT系列模型<br>
+        <strong>获取密钥：</strong><a href="https://dashscope.console.aliyun.com/apiKey" target="_blank" style="color: #667eea;">通义千问</a> | <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #667eea;">OpenAI</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">替换比例</div>
+      <div class="control-group">
+        <div class="control-label">
+          <span>中文替换为英文的比例</span>
+          <span class="control-value"><span id="ratioValue">30</span>%</span>
+        </div>
+        <div class="slider-container">
+          <input type="range" id="ratioSlider" min="0" max="100" value="30" step="5">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">词汇难度</div>
+      <div class="radio-group">
+        <div class="radio-option">
+          <input type="radio" id="easy" name="difficulty" value="easy">
+          <label for="easy">简单</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" id="medium" name="difficulty" value="medium" checked>
+          <label for="medium">中等</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" id="hard" name="difficulty" value="hard">
+          <label for="hard">困难</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="btn" id="applyBtn">应用设置并刷新页面</button>
+      <div class="status" id="status">设置已保存！正在刷新...</div>
+    </div>
+
+    <div class="section">
+      <div class="info-box">
+        <strong>💡 使用说明：</strong><br>
+        • 调整替换比例控制英文单词数量<br>
+        • 选择适合你的词汇难度<br>
+        • 鼠标悬停在英文单词上自动发音<br>
+        • 点击英文单词可切换显示中文<br>
+        • 可关闭自动发音功能
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

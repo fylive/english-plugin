@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图标生成器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+
+    .icon-preview {
+      display: flex;
+      gap: 30px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .icon-box {
+      text-align: center;
+    }
+
+    .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20%;
+      color: white;
+      font-weight: bold;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .icon-16 {
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+    }
+
+    .icon-48 {
+      width: 48px;
+      height: 48px;
+      font-size: 28px;
+    }
+
+    .icon-128 {
+      width: 128px;
+      height: 128px;
+      font-size: 72px;
+    }
+
+    .instructions {
+      background: #f0f0f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+
+    .instructions h2 {
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+    }
+
+    .instructions li {
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+
+    code {
+      background: #e0e0e0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌐 中英翻译助手 - 图标预览</h1>
+
+    <div class="icon-preview">
+      <div class="icon-box">
+        <div class="icon icon-16">译</div>
+        <div>16x16</div>
+      </div>
+      <div class="icon-box">
+        <div class="icon icon-48">译</div>
+        <div>48x48</div>
+      </div>
+      <div class="icon-box">
+        <div class="icon icon-128">译</div>
+        <div>128x128</div>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <h2>📸 如何生成图标</h2>
+      <ol>
+        <li>在浏览器中打开此HTML文件</li>
+        <li>使用截图工具（如Windows的截图工具、Mac的Command+Shift+4）</li>
+        <li>分别截取上面三个不同尺寸的图标</li>
+        <li>将截图保存为：
+          <ul>
+            <li><code>icon16.png</code> (16x16像素)</li>
+            <li><code>icon48.png</code> (48x48像素)</li>
+            <li><code>icon128.png</code> (128x128像素)</li>
+          </ul>
+        </li>
+        <li>将这三个文件放入 <code>icons/</code> 文件夹中</li>
+      </ol>
+    </div>
+
+    <div class="note">
+      <strong>💡 提示：</strong> 如果你有图像编辑软件（如Photoshop、GIMP、Figma等），可以创建更精美的图标。或者访问 <a href="https://www.flaticon.com/" target="_blank">flaticon.com</a> 下载免费的翻译图标。
+    </div>
+
+    <div class="note" style="margin-top: 15px; background: #d1ecf1; border-left-color: #0c5460;">
+      <strong>⚠️ 临时方案：</strong> 如果暂时没有图标，插件仍然可以正常工作。Chrome/Edge会显示默认的扩展图标。你可以稍后再添加自定义图标。
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "中英混合阅读助手",
+  "version": "1.0.0",
+  "description": "沉浸式英语学习工具，自动将网页中部分中文替换为英文，支持美式发音",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "中英混合阅读助手"
+  }
+}

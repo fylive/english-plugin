@@ -1,0 +1,74 @@
+/* 翻译单词样式 */
+.translated-word {
+  color: #667eea;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline;
+  position: relative;
+}
+
+.translated-word:hover {
+  background-color: #fff3cd !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  cursor: help !important;
+}
+
+/* 提示框样式 - 优化显示 */
+.translated-word::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  margin-bottom: 8px;
+  z-index: 10000;
+  font-weight: normal;
+}
+
+.translated-word:hover::after {
+  opacity: 1;
+}
+
+/* 添加小箭头 */
+.translated-word::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  margin-bottom: 3px;
+  z-index: 10000;
+}
+
+.translated-word:hover::before {
+  opacity: 1;
+}
+
+/* 发音指示器 */
+.translated-word.speaking {
+  animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
