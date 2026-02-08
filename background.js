@@ -11,6 +11,9 @@ chrome.runtime.onInstalled.addListener((details) => {
       difficulty: 'medium',
       autoSpeak: true,
       useAI: false, // 默认使用词表模式
+      wordLookupEnabled: true, // 双击单词快速翻译（离线优先）
+      wordLookupUseApiFallback: false, // 词表未命中时是否调用在线API
+      wordLookupApi: 'mymemory', // 备用在线API
       aiApiKey: '',
       aiEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
       aiModel: 'qwen-turbo'

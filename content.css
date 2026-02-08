@@ -72,3 +72,71 @@
     transform: scale(1.05);
   }
 }
+
+/* 双击查词气泡 */
+.word-lookup-bubble {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 320px;
+  background: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #222;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.word-lookup-bubble .row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.word-lookup-bubble .src {
+  font-weight: 700;
+  color: #667eea;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.word-lookup-bubble .arrow {
+  opacity: 0.55;
+}
+
+.word-lookup-bubble .dst {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-lookup-bubble .meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.word-lookup-bubble .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.word-lookup-bubble button {
+  appearance: none;
+  border: none;
+  background: #f3f5ff;
+  color: #3f51b5;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.word-lookup-bubble button:hover {
+  background: #e9ecff;
+}

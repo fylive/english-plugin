@@ -4,6 +4,9 @@ let config = {
   replaceRatio: 30, // 替换比例 0-100
   difficulty: 'medium', // easy, medium, hard
   autoSpeak: true, // 自动发音
+  wordLookupEnabled: true, // 双击单词快速翻译（离线优先）
+  wordLookupUseApiFallback: false, // 词表未命中时是否调用在线API
+  wordLookupApi: 'mymemory', // 备用在线API
   excludeSelectors: ['script', 'style', 'code', 'pre', 'textarea', 'input']
 };
 
@@ -13,6 +16,260 @@ let currentUtterance = null;
 let voicesLoaded = false;
 let selectedVoice = null;
 let speechActivated = false;
+
+// -------- 双击查词（离线词表优先）--------
+let offlineDictLoaded = false;
+let offlineDictLoadingPromise = null;
+const dictEnZh = new Map();
+const dictZhEn = new Map();
+const lookupCache = new Map(); // key: `${from}|${to}|${word}` -> translation
+
+function detectWordLanguage(word) {
+  if (/[\u4e00-\u9fa5]/.test(word)) return 'zh';
+  if (/[a-zA-Z]/.test(word)) return 'en';
+  return 'unknown';
+}
+
+function normalizeLookupWord(raw) {
+  if (!raw) return '';
+  let word = raw.trim();
+  word = word.replace(/^[\s"'“”‘’`~!@#$%^&*()\-_=+\[\]{}\\|;:,.<>/?]+/, '');
+  word = word.replace(/[\s"'“”‘’`~!@#$%^&*()\-_=+\[\]{}\\|;:,.<>/?]+$/, '');
+  return word.trim();
+}
+
+function normalizeEnglishWord(word) {
+  const w = word.toLowerCase();
+  return w.replace(/’/g, "'"); // 统一撇号
+}
+
+async function loadOfflineDictionaries() {
+  if (offlineDictLoaded) return;
+  if (offlineDictLoadingPromise) return offlineDictLoadingPromise;
+
+  offlineDictLoadingPromise = (async () => {
+    try {
+      const [enZhRes, zhEnRes] = await Promise.all([
+        fetch(chrome.runtime.getURL('dict/en_zh.base.json')),
+        fetch(chrome.runtime.getURL('dict/zh_en.base.json'))
+      ]);
+
+      const [enZhJson, zhEnJson] = await Promise.all([enZhRes.json(), zhEnRes.json()]);
+
+      Object.entries(enZhJson).forEach(([en, zh]) => {
+        dictEnZh.set(normalizeEnglishWord(en), String(zh));
+      });
+      Object.entries(zhEnJson).forEach(([zh, en]) => {
+        dictZhEn.set(String(zh), String(en));
+      });
+
+      offlineDictLoaded = true;
+      console.log('[翻译插件] 离线词典加载完成:', dictEnZh.size, dictZhEn.size);
+    } catch (error) {
+      console.warn('[翻译插件] 离线词典加载失败:', error);
+      offlineDictLoaded = true; // 避免反复加载
+    }
+  })();
+
+  return offlineDictLoadingPromise;
+}
+
+function lookupOffline(word, from, to) {
+  if (!word) return null;
+
+  if (from === 'en' && to === 'zh') {
+    const key = normalizeEnglishWord(word);
+    if (dictEnZh.has(key)) return dictEnZh.get(key);
+
+    // 简单词形回退（尽量不做重逻辑，保证速度）
+    if (key.endsWith('s') && dictEnZh.has(key.slice(0, -1))) return dictEnZh.get(key.slice(0, -1));
+    if (key.endsWith('es') && dictEnZh.has(key.slice(0, -2))) return dictEnZh.get(key.slice(0, -2));
+    if (key.endsWith('ed') && dictEnZh.has(key.slice(0, -2))) return dictEnZh.get(key.slice(0, -2));
+    if (key.endsWith('ing') && dictEnZh.has(key.slice(0, -3))) return dictEnZh.get(key.slice(0, -3));
+    return null;
+  }
+
+  if (from === 'zh' && to === 'en') {
+    if (dictZhEn.has(word)) return dictZhEn.get(word);
+    return null;
+  }
+
+  return null;
+}
+
+async function translateViaMyMemory(word, from, to) {
+  const langpair = from === 'en' ? `en|zh-CN` : `zh-CN|en`;
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${encodeURIComponent(langpair)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`MyMemory错误: ${res.status}`);
+  const data = await res.json();
+  const translated = data?.responseData?.translatedText;
+  if (!translated) return null;
+  return String(translated);
+}
+
+async function translateSingleWord(rawWord) {
+  const word = normalizeLookupWord(rawWord);
+  if (!word) return null;
+  if (/\s/.test(word)) return null;
+  if (word.length > 60) return null;
+
+  const lang = detectWordLanguage(word);
+  if (lang === 'unknown') return null;
+
+  const from = lang;
+  const to = lang === 'en' ? 'zh' : 'en';
+  const cacheKey = `${from}|${to}|${lang === 'en' ? normalizeEnglishWord(word) : word}`;
+  if (lookupCache.has(cacheKey)) {
+    return { source: word, from, to, target: lookupCache.get(cacheKey), provider: 'cache' };
+  }
+
+  await loadOfflineDictionaries();
+  const offline = lookupOffline(word, from, to);
+  if (offline) {
+    lookupCache.set(cacheKey, offline);
+    return { source: word, from, to, target: offline, provider: 'offline' };
+  }
+
+  if (config.wordLookupUseApiFallback && config.wordLookupApi === 'mymemory') {
+    try {
+      const apiResult = await translateViaMyMemory(word, from, to);
+      if (apiResult) {
+        lookupCache.set(cacheKey, apiResult);
+        return { source: word, from, to, target: apiResult, provider: 'mymemory' };
+      }
+    } catch (error) {
+      console.warn('[翻译插件] 在线API翻译失败:', error);
+    }
+  }
+
+  return { source: word, from, to, target: null, provider: offlineDictLoaded ? 'miss' : 'unavailable' };
+}
+
+let wordLookupBubble = null;
+let bubbleHideTimer = null;
+
+function removeWordLookupBubble() {
+  if (bubbleHideTimer) {
+    clearTimeout(bubbleHideTimer);
+    bubbleHideTimer = null;
+  }
+  if (wordLookupBubble && wordLookupBubble.parentNode) {
+    wordLookupBubble.parentNode.removeChild(wordLookupBubble);
+  }
+  wordLookupBubble = null;
+}
+
+function positionBubbleAtRect(bubble, rect) {
+  const padding = 10;
+  const bubbleRect = bubble.getBoundingClientRect();
+
+  let left = rect.left + rect.width / 2 - bubbleRect.width / 2;
+  let top = rect.top - bubbleRect.height - 10;
+
+  left = Math.max(padding, Math.min(left, window.innerWidth - bubbleRect.width - padding));
+  if (top < padding) {
+    top = rect.bottom + 10;
+  }
+  top = Math.max(padding, Math.min(top, window.innerHeight - bubbleRect.height - padding));
+
+  bubble.style.left = `${left}px`;
+  bubble.style.top = `${top}px`;
+}
+
+function getSelectionRect() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  if (rect && (rect.width || rect.height)) return rect;
+  return null;
+}
+
+function showWordLookupBubble({ source, target, provider, rect }) {
+  removeWordLookupBubble();
+
+  const bubble = document.createElement('div');
+  bubble.className = 'word-lookup-bubble';
+  bubble.innerHTML = `
+    <div class="row">
+      <div class="src" title="${escapeHtml(source)}">${escapeHtml(source)}</div>
+      <div class="arrow">→</div>
+      <div class="dst">${target ? escapeHtml(target) : '<span style="color:#999">未命中</span>'}</div>
+    </div>
+    <div class="meta">
+      <span>${provider === 'offline' ? '离线词表' : provider === 'mymemory' ? '在线API' : provider === 'cache' ? '缓存' : '—'}</span>
+      <div class="actions">
+        <button type="button" data-action="speak-src">朗读</button>
+        <button type="button" data-action="close">关闭</button>
+      </div>
+    </div>
+  `;
+
+  bubble.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const action = e.target?.getAttribute?.('data-action');
+    if (action === 'close') removeWordLookupBubble();
+    if (action === 'speak-src') speakText(source, null);
+  });
+
+  document.body.appendChild(bubble);
+  wordLookupBubble = bubble;
+
+  // 先放到屏幕中，再计算尺寸定位
+  positionBubbleAtRect(bubble, rect);
+
+  // 自动隐藏（不打扰阅读）
+  bubbleHideTimer = setTimeout(() => {
+    removeWordLookupBubble();
+  }, 8000);
+}
+
+async function handleWordLookupFromSelection() {
+  if (!config.wordLookupEnabled) return;
+
+  const selection = window.getSelection();
+  const raw = selection ? selection.toString() : '';
+  const word = normalizeLookupWord(raw);
+  if (!word || /\s/.test(word)) return;
+
+  const rect = getSelectionRect();
+  if (!rect) return;
+
+  // 先显示加载态
+  showWordLookupBubble({ source: word, target: '查询中…', provider: 'cache', rect });
+
+  const result = await translateSingleWord(word);
+  if (!result) {
+    removeWordLookupBubble();
+    return;
+  }
+
+  showWordLookupBubble({
+    source: result.source,
+    target: result.target,
+    provider: result.provider,
+    rect
+  });
+}
+
+function setupWordLookup() {
+  document.addEventListener('dblclick', async (e) => {
+    // 忽略在输入框等区域的双击
+    const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+    if (['input', 'textarea'].includes(tag)) return;
+    await handleWordLookupFromSelection();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') removeWordLookupBubble();
+  });
+
+  document.addEventListener('click', () => {
+    // 点击空白处关闭
+    removeWordLookupBubble();
+  });
+}
 
 // 中文→英文词汇库（按难度分级）
 const vocabularyCN2EN = {
@@ -637,11 +894,21 @@ async function init() {
 
   // 加载配置
   const savedConfig = await chrome.storage.sync.get([
-    'enabled', 'replaceRatio', 'difficulty', 'autoSpeak', 'useAI'
+    'enabled',
+    'replaceRatio',
+    'difficulty',
+    'autoSpeak',
+    'useAI',
+    'wordLookupEnabled',
+    'wordLookupUseApiFallback',
+    'wordLookupApi'
   ]);
   config = { ...config, ...savedConfig };
 
   console.log('[翻译插件] 当前配置:', config);
+
+  // 双击查词
+  setupWordLookup();
 
   if (config.enabled) {
     processPage();

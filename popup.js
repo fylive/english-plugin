@@ -8,7 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadSettings() {
   const settings = await chrome.storage.sync.get([
     'enabled', 'replaceRatio', 'difficulty', 'autoSpeak',
-    'useAI', 'aiApiKey', 'aiEndpoint', 'aiModel', 'aiService'
+    'useAI',
+    'wordLookupEnabled',
+    'wordLookupUseApiFallback',
+    'wordLookupApi',
+    'aiApiKey',
+    'aiEndpoint',
+    'aiModel',
+    'aiService'
   ]);
 
   // 设置开关状态
@@ -30,6 +37,14 @@ async function loadSettings() {
   // 设置自动发音
   if (settings.autoSpeak !== undefined) {
     document.getElementById('autoSpeakSwitch').checked = settings.autoSpeak;
+  }
+
+  // 双击查词开关
+  if (settings.wordLookupEnabled !== undefined) {
+    document.getElementById('wordLookupSwitch').checked = settings.wordLookupEnabled;
+  }
+  if (settings.wordLookupUseApiFallback !== undefined) {
+    document.getElementById('wordLookupApiFallbackSwitch').checked = settings.wordLookupUseApiFallback;
   }
 
   // 设置选词模式
@@ -92,6 +107,19 @@ function setupEventListeners() {
     await chrome.storage.sync.set({ autoSpeak: e.target.checked });
   });
 
+  // 双击查词开关
+  document.getElementById('wordLookupSwitch').addEventListener('change', async (e) => {
+    await chrome.storage.sync.set({ wordLookupEnabled: e.target.checked });
+  });
+
+  // 未命中使用在线API开关
+  document.getElementById('wordLookupApiFallbackSwitch').addEventListener('change', async (e) => {
+    await chrome.storage.sync.set({
+      wordLookupUseApiFallback: e.target.checked,
+      wordLookupApi: 'mymemory'
+    });
+  });
+
   // 选词模式切换
   document.querySelectorAll('input[name="mode"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
@@ -111,6 +139,8 @@ async function saveSettings() {
   const replaceRatio = parseInt(document.getElementById('ratioSlider').value);
   const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
   const autoSpeak = document.getElementById('autoSpeakSwitch').checked;
+  const wordLookupEnabled = document.getElementById('wordLookupSwitch').checked;
+  const wordLookupUseApiFallback = document.getElementById('wordLookupApiFallbackSwitch').checked;
   const useAI = document.querySelector('input[name="mode"]:checked').value === 'ai';
   const aiService = document.getElementById('aiService').value;
   const aiApiKey = document.getElementById('aiApiKey').value.trim();
@@ -146,6 +176,9 @@ async function saveSettings() {
     replaceRatio: replaceRatio,
     difficulty: difficulty,
     autoSpeak: autoSpeak,
+    wordLookupEnabled: wordLookupEnabled,
+    wordLookupUseApiFallback: wordLookupUseApiFallback,
+    wordLookupApi: 'mymemory',
     useAI: useAI,
     aiService: aiService,
     aiApiKey: aiApiKey,
